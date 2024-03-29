@@ -20,6 +20,7 @@ public class TravelController {
     @GetMapping
     public ResponseEntity getTravels() {
         List<Travel> travels = travelService.findAll();
+
         return ResponseEntity.ok().body(travels);
     }
 
@@ -30,8 +31,9 @@ public class TravelController {
             return ResponseEntity.badRequest().build();
         }
         Travel travel = optionalTravel.get();
+        TravelResource resource = new TravelResource(travel);
 
-        return ResponseEntity.ok().body(travel);
+        return ResponseEntity.ok(resource);
     }
 
 
