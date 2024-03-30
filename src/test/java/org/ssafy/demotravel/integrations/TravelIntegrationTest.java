@@ -82,6 +82,6 @@ public class TravelIntegrationTest {
         // when & then
         this.mockMvc.perform(get("/api/travels/1232"))
                 .andDo(print())
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 }

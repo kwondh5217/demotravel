@@ -21,6 +21,7 @@ public class TravelController {
     public ResponseEntity getTravels() {
         List<Travel> travels = travelService.findAll();
 
+
         return ResponseEntity.ok().body(travels);
     }
 
@@ -28,7 +29,7 @@ public class TravelController {
     public ResponseEntity getTravel(@PathVariable("id") Long id) {
         Optional<Travel> optionalTravel = travelService.findById(id);
         if(optionalTravel.isEmpty()){
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.notFound().build();
         }
         Travel travel = optionalTravel.get();
         TravelResource resource = new TravelResource(travel);
