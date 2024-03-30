@@ -16,7 +16,7 @@ import org.ssafy.demotravel.travels.TravelRepository;
 
 import java.util.stream.IntStream;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -74,5 +74,14 @@ public class TravelIntegrationTest {
                 .andExpect(jsonPath("name").exists())
                 .andExpect(jsonPath("_links.self").exists())
         ;
+    }
+
+    @DisplayName("Travel조회 요청이 실패하는 테스트")
+    @Test
+    void getTravel_notFound() throws Exception {
+        // when & then
+        this.mockMvc.perform(get("/api/travels/1232"))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
     }
 }
