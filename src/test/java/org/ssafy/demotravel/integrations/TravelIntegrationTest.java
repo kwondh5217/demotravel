@@ -16,6 +16,7 @@ import org.ssafy.demotravel.travels.TravelRepository;
 
 import java.util.stream.IntStream;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,7 +32,7 @@ public class TravelIntegrationTest {
     TravelRepository travelRepository;
 
 
-    @DisplayName("Travel pageable 테스트")
+    @DisplayName("Travel 첫번째 페이지로 10개를 조회하는 테스트")
     @Test
     void findAll() throws Exception {
         // given
@@ -44,6 +45,7 @@ public class TravelIntegrationTest {
         // when
         ResultActions resultActions = this.mockMvc.perform(get("/api/travels")
                 .param("page", "0")
+                .param("size", "10")
                 .param("sort", "name,DESC"));
 
         // then
@@ -51,6 +53,7 @@ public class TravelIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
                 .andExpect(jsonPath("_embedded.travelList[0].name").exists())
+                .andExpect(jsonPath("_embedded.travelList", hasSize(10)))
         ;
     }
 
