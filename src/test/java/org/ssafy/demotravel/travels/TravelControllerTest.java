@@ -6,9 +6,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,24 +38,31 @@ class TravelControllerTest {
     @MockBean(name = "travelService")
     TravelService travelService;
 
-    @DisplayName("Travel 전체를 조회하는 테스트")
+    @DisplayName("Travel 두번째 페이지에서 10개 조회하는 테스트")
     @Test
     void findAll() throws Exception {
         // given
         List<Travel> travels = new ArrayList<>();
-        IntStream.range(0, 10).forEach(i -> {
+        IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setName("test" + i);
             travels.add(travel);
         });
-        when(this.travelService.findAll()).thenReturn(travels);
+        PageRequest pageRequest = PageRequest.of(1, 10);
+        int start = (int) pageRequest.getOffset();
+        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
+        PageImpl<Travel> travelPage = new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
+
+        when(this.travelService.findAll(any(Pageable.class))).thenReturn(travelPage);
 
         // when & then
-        this.mockMvc.perform(get("/api/travels"))
+        this.mockMvc.perform(get("/api/travels")
+                        .param("page", "1")
+                        .param("sort", "name,DESC"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].name").exists());
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
+                .andExpect(jsonPath("_embedded.travelList[0].name").exists());
     }
 
     @DisplayName("Travel ID로 조회하는 테스트")

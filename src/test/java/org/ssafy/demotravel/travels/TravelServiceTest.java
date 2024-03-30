@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,24 +31,28 @@ class TravelServiceTest {
         this.travelService = new TravelService(travelRepository);
     }
 
-    @DisplayName("Travel 전체를 조회하는 테스트")
+    @DisplayName("Travel 두번째 페이지에서 10개 조회하는 테스트")
     @Test
     void findAll() {
         // given
         List<Travel> travels = new ArrayList<>();
-        IntStream.range(0, 10).forEach(i -> {
+        IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setName("test" + i);
             travels.add(travel);
         });
-        when(this.travelRepository.findAll()).thenReturn(travels);
+        PageRequest pageRequest = PageRequest.of(1, 10);
+        int start = (int) pageRequest.getOffset();
+        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
+        PageImpl<Travel> travelPage = new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
+        when(this.travelRepository.findAll(pageRequest)).thenReturn(travelPage);
 
         // when
-        List<Travel> travelList = this.travelService.findAll();
+        Page<Travel> travelList = this.travelService.findAll(pageRequest);
 
         // then
         assertThat(travelList.isEmpty()).isFalse();
-        assertThat(travelList.size()).isEqualTo(10);
+        assertThat(travelList.getNumberOfElements()).isEqualTo(10);
     }
 
     @DisplayName("Travel ID로 조회하는 테스트")

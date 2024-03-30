@@ -1,10 +1,11 @@
 package org.ssafy.demotravel.travels;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -14,8 +15,8 @@ public class TravelService {
 
     private final TravelRepository travelRepository;
 
-    public List<Travel> findAll(){
-        return this.travelRepository.findAll();
+    public Page<Travel> findAll(Pageable pageable){
+        return this.travelRepository.findAll(pageable);
     }
 
     public Optional<Travel> findById(Long id){

@@ -4,8 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -17,21 +17,22 @@ class TravelRepositoryTest {
     @Autowired
     TravelRepository travelRepository;
 
-    @DisplayName("Travel 전체를 조회하는 테스트")
+    @DisplayName("Travel 두번째 페이지에서 10개 조회하는테스트")
     @Test
     void findAll(){
         // given
-        IntStream.range(0, 10).forEach(i -> {
+        IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setName("test" + i);
             this.travelRepository.save(travel);
         });
+        PageRequest pageRequest = PageRequest.of(1, 10);
         // when
-        List<Travel> travels = this.travelRepository.findAll();
+        var travels = this.travelRepository.findAll(pageRequest);
 
         // then
         assertThat(travels).isNotEmpty();
-        assertThat(travels.size()).isEqualTo(10);
+        assertThat(travels.getNumberOfElements()).isEqualTo(10);
     }
 
     @DisplayName("Travel ID로 조회하는 테스트")

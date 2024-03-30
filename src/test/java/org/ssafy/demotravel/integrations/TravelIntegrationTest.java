@@ -31,24 +31,26 @@ public class TravelIntegrationTest {
     TravelRepository travelRepository;
 
 
-    @DisplayName("Travel 전체를 조회하는 테스트")
+    @DisplayName("Travel pageable 테스트")
     @Test
     void findAll() throws Exception {
         // given
-        IntStream.range(0, 10).forEach(i -> {
+        IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setName("test" + i);
             this.travelRepository.save(travel);
         });
 
         // when
-        ResultActions resultActions = this.mockMvc.perform(get("/api/travels"));
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels")
+                .param("page", "0")
+                .param("sort", "name,DESC"));
 
         // then
         resultActions.andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].name").exists())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
+                .andExpect(jsonPath("_embedded.travelList[0].name").exists())
         ;
     }
 
