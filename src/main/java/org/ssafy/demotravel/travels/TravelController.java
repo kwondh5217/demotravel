@@ -5,10 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -26,6 +23,37 @@ public class TravelController {
 
         return ResponseEntity.ok().body(travelResources);
     }
+
+    @GetMapping("/sido")
+    public ResponseEntity findBysido(@RequestParam("sidoCode") int sidoCode,
+                                     PagedResourcesAssembler <Travel> assembler,
+                                     Pageable pageable){
+        Page<Travel> bySido = travelService.findBySido(sidoCode, pageable);
+        var bySidoResources = assembler.toModel(bySido, t -> new TravelResource(t));
+
+        return ResponseEntity.ok().body(bySidoResources);
+    }
+
+    @GetMapping("/gugun")
+    public ResponseEntity findByGugun(@RequestParam("gugunCode") int gugunCode,
+                                     PagedResourcesAssembler <Travel> assembler,
+                                     Pageable pageable){
+        Page<Travel> byGugun = travelService.findByGugun(gugunCode, pageable);
+        var byGugunResources = assembler.toModel(byGugun, t -> new TravelResource(t));
+
+        return ResponseEntity.ok().body(byGugunResources);
+    }
+
+    @GetMapping("/keyword")
+    public ResponseEntity findByKeyword(@RequestParam("keyword") String keyword,
+                                      PagedResourcesAssembler <Travel> assembler,
+                                      Pageable pageable){
+        Page<Travel> byKeyword = travelService.findByKeyword(keyword, pageable);
+        var byKeywordResources = assembler.toModel(byKeyword, t -> new TravelResource(t));
+
+        return ResponseEntity.ok().body(byKeywordResources);
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity getTravel(@PathVariable("id") Long id) {

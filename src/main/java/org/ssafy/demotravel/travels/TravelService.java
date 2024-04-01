@@ -15,6 +15,18 @@ public class TravelService {
 
     private final TravelRepository travelRepository;
 
+    public Page<Travel> findBySido(int sidoCode, Pageable pageable){
+        return travelRepository.findByTravelSidoCode(sidoCode, pageable);
+    }
+    public Page<Travel> findByGugun(int gugunCode, Pageable pageable){
+        return travelRepository.findByTravelGugunCode(gugunCode, pageable);
+    }
+
+    public Page<Travel> findByKeyword(String keyword, Pageable pageable){
+        return travelRepository.findByTravelTitleContaining(keyword, pageable);
+    }
+
+
     public Page<Travel> findAll(Pageable pageable){
         return this.travelRepository.findAll(pageable);
     }
