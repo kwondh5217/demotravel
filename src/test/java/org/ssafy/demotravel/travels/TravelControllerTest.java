@@ -11,7 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ActiveProfiles("test")
 @DisplayName("TravelController")
 @WebMvcTest
 class TravelControllerTest {
@@ -45,7 +48,7 @@ class TravelControllerTest {
         List<Travel> travels = new ArrayList<>();
         IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
-            travel.setName("test" + i);
+            travel.setTravelTitle("test" + i);
             travels.add(travel);
         });
         PageRequest pageRequest = PageRequest.of(1, 10);
@@ -62,7 +65,7 @@ class TravelControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
-                .andExpect(jsonPath("_embedded.travelList[0].name").exists());
+                .andExpect(jsonPath("_embedded.travelList[0].travelTitle").exists());
     }
 
     @DisplayName("Travel ID로 조회하는 테스트")
@@ -71,7 +74,7 @@ class TravelControllerTest {
         // given
         Travel travel = new Travel();
         travel.setId(1L);
-        travel.setName("test");
+        travel.setTravelTitle("test");
 
         when(this.travelService.findById(travel.getId())).thenReturn(Optional.of(travel));
 
@@ -80,7 +83,7 @@ class TravelControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
-                .andExpect(jsonPath("name").exists());
+                .andExpect(jsonPath("travelTitle").exists());
     }
 
     @DisplayName("Travel조회 요청이 실패하는 테스트")
@@ -94,6 +97,91 @@ class TravelControllerTest {
         this.mockMvc.perform(get("/api/travels/1232"))
                 .andDo(print())
                 .andExpect(status().isNotFound());
+    }
+
+    @DisplayName("sido code로 여행지 정보 조회하기")
+    @Test
+    void findBySidoCode() throws Exception {
+        // given
+        int sidoCode = 12345;
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        PageImpl<Travel> travels = generateTravels(sidoCode, pageRequest);
+
+        when(this.travelService.findBySido(sidoCode, pageRequest)).thenReturn(travels);
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/sido")
+                .param("sidoCode", String.valueOf(sidoCode))
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @DisplayName("gugun code로 여행지 정보 조회하기")
+    @Test
+    void findByGugnCode() throws Exception {
+        // given
+        int gugunCode = 12345;
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        PageImpl<Travel> travels = generateTravels(gugunCode, pageRequest);
+
+        when(this.travelService.findByGugun(gugunCode, pageRequest)).thenReturn(travels);
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/gugun")
+                .param("gugunCode", String.valueOf(gugunCode))
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @DisplayName("키워드가 포함된 여행지 정보 조회하기")
+    @Test
+    void findByKeyword() throws Exception {
+        // given
+        String keyword = "부산";
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        List<Travel> travels = new ArrayList<>();
+        IntStream.range(0, 30).forEach(i -> {
+            Travel travel = new Travel();
+            travel.setTravelTitle("test" + i + keyword);
+            travels.add(travel);
+        });
+
+        int start = (int) pageRequest.getOffset();
+        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
+        PageImpl<Travel> travelsPages = new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
+
+
+        when(this.travelService.findByKeyword(keyword, pageRequest)).thenReturn(travelsPages);
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/keyword")
+                .param("keyword", keyword)
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk());
+    }
+
+
+    private PageImpl<Travel> generateTravels(int code, PageRequest pageRequest){
+        List<Travel> travels = new ArrayList<>();
+        IntStream.range(0, 30).forEach(i -> {
+            Travel travel = new Travel();
+            travel.setTravelTitle("test" + i);
+            travel.setTravelSidoCode(code);
+            travels.add(travel);
+        });
+
+        int start = (int) pageRequest.getOffset();
+        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
+        return new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
     }
 
 }
