@@ -7,6 +7,7 @@ import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -65,6 +66,20 @@ public class TravelController {
         TravelResource resource = new TravelResource(travel);
 
         return ResponseEntity.ok(resource);
+    }
+
+    @GetMapping("/coordinate")
+    public ResponseEntity getTravelsByCoordinate(@RequestParam("northLatitude") BigDecimal northLatitude,
+                                                 @RequestParam("southLatitude") BigDecimal southLatitude,
+                                                 @RequestParam("eastLongitude") BigDecimal eastLongitude,
+                                                 @RequestParam("westLongitude") BigDecimal westLongitude,
+                                                 Pageable pageable, PagedResourcesAssembler<Travel> assembler) {
+
+        Page<Travel> byCoordinates = this.travelService.findByCoordinates(northLatitude, southLatitude,
+                eastLongitude, westLongitude, pageable);
+
+        var travelResources = assembler.toModel(byCoordinates, t -> new TravelResource(t));
+        return ResponseEntity.ok().body(travelResources);
     }
 
 
