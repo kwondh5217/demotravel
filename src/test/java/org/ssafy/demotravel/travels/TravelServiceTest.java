@@ -1,160 +1,236 @@
-package org.ssafy.demotravel.travels;
+package org.ssafy.demotravel.integrations;
+
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.filter.CharacterEncodingFilter;
+import org.ssafy.demotravel.travels.Travel;
+import org.ssafy.demotravel.travels.TravelRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.modifyUris;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(RestDocumentationExtension.class)
 @ActiveProfiles("test")
-@DisplayName("TravelService")
-@ExtendWith(MockitoExtension.class)
-class TravelServiceTest {
-    @Mock
+@SpringBootTest
+@AutoConfigureMockMvc
+public class TravelIntegrationTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
     TravelRepository travelRepository;
 
-    private TravelService travelService;
 
     @BeforeEach
-    void setup(){
-        this.travelService = new TravelService(travelRepository);
+    void setup(WebApplicationContext webApplicationContext,
+               RestDocumentationContextProvider restDocumentationContextProvider){
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilter(new CharacterEncodingFilter("UTF-8", true))
+                .apply(documentationConfiguration(restDocumentationContextProvider)
+                        .operationPreprocessors()
+                        .withRequestDefaults(modifyUris().host("localhost").removePort(), prettyPrint())
+                        .withResponseDefaults(modifyUris().host("localhost").removePort(), prettyPrint()))
+                .build();
     }
 
-    @DisplayName("Travel 두번째 페이지에서 10개 조회하는 테스트")
+    @DisplayName("Travel pageable 테스트")
     @Test
-    void findAll() {
+    void findAll() throws Exception {
         // given
-        List<Travel> travels = new ArrayList<>();
         IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setTravelTitle("test" + i);
-            travels.add(travel);
+            this.travelRepository.save(travel);
         });
-        PageRequest pageRequest = PageRequest.of(1, 10);
-        int start = (int) pageRequest.getOffset();
-        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
-        PageImpl<Travel> travelPage = new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
-        when(this.travelRepository.findAll(pageRequest)).thenReturn(travelPage);
 
         // when
-        Page<Travel> travelList = this.travelService.findAll(pageRequest);
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels")
+                .param("page", "0")
+                .param("sort", "travelTitle,DESC"));
 
         // then
-        assertThat(travelList.isEmpty()).isFalse();
-        assertThat(travelList.getNumberOfElements()).isEqualTo(10);
+        resultActions.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE+";charset=UTF-8"))
+                .andExpect(jsonPath("_embedded.travelList[0].travelTitle").exists())
+        ;
     }
 
     @DisplayName("Travel ID로 조회하는 테스트")
     @Test
-    void findById() {
+    void findById() throws Exception {
         // given
         Travel travel = new Travel();
-        travel.setId(1L);
-        travel.setTravelTitle("test");
-        when(this.travelRepository.findById(travel.getId()))
-                .thenReturn(Optional.of(travel));
+        String name = "test";
+        travel.setTravelTitle(name);
+        Travel save = this.travelRepository.save(travel);
 
         // when
-        Optional<Travel> optionalTravel = this.travelService.findById(travel.getId());
+        ResultActions resultActions = this.mockMvc.perform(
+                get("/api/travels/{id}", save.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaTypes.HAL_JSON));
 
         // then
-        assertThat(optionalTravel.isEmpty()).isFalse();
-        assertThat(optionalTravel.get().getTravelTitle()).isEqualTo(travel.getTravelTitle());
+        resultActions.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE+";charset=UTF-8"))
+                .andExpect(jsonPath("travelTitle").exists())
+                .andExpect(jsonPath("_links.self").exists())
+        ;
     }
 
-    @DisplayName("Travel sido 코드로 조회하기")
+    @DisplayName("Travel조회 요청이 실패하는 테스트")
     @Test
-    void findBySidoCode() {
+    void getTravel_notFound() throws Exception {
+        // when & then
+        this.mockMvc.perform(get("/api/travels/1232"))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+
+    @DisplayName("sido code로 여행지 정보 조회하기")
+    @Test
+    void findBySidoCode() throws Exception {
         // given
         int sidoCode = 12345;
-        PageRequest pageRequest = PageRequest.of(0, 10);
-        PageImpl<Travel> travels = generateTravels(sidoCode, pageRequest);
-        when(this.travelRepository.findByTravelSidoCode(sidoCode, pageRequest)).thenReturn(travels);
+        generateTravels(sidoCode);
 
         // when
-        Page<Travel> bySido = this.travelService.findBySido(sidoCode, pageRequest);
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/sido")
+                .param("sidoCode", String.valueOf(sidoCode))
+                .param("page", "0")
+                .param("size", "10"));
 
-        //then
-        assertThat(bySido).isNotEmpty();
-        assertThat(bySido).size().isEqualTo(10);
-        assertThat(bySido.get().findFirst().get().getTravelSidoCode()).isEqualTo(sidoCode);
+        // then
+        resultActions.andDo(print())
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.travelList[*].id").exists());
     }
 
-    @DisplayName("Travel gugun 코드로 조회하기")
+    @DisplayName("gugun code로 여행지 정보 조회하기")
     @Test
-    void findByGugunCode() {
+    void findByGugunCode() throws Exception {
         // given
         int gugunCode = 12345;
-        PageRequest pageRequest = PageRequest.of(0, 10);
-        PageImpl<Travel> travels = generateTravels(gugunCode, pageRequest);
-        when(this.travelRepository.findByTravelGugunCode(gugunCode, pageRequest)).thenReturn(travels);
+        generateTravels(gugunCode);
 
         // when
-        Page<Travel> byGugun = this.travelService.findByGugun(gugunCode, pageRequest);
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/gugun")
+                .param("gugunCode", String.valueOf(gugunCode))
+                .param("page", "0")
+                .param("size", "10"));
 
-        //then
-        assertThat(byGugun).isNotEmpty();
-        assertThat(byGugun).size().isEqualTo(10);
-        assertThat(byGugun.get().findFirst().get().getTravelGugunCode()).isEqualTo(gugunCode);
+        // then
+        resultActions.andDo(print())
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.travelList[*].id").exists());
     }
 
-    @DisplayName("title에 keyword가 포함된 Travel 조회하기")
+    @DisplayName("키워드가 포함된 여행지 정보 조회하기")
     @Test
-    void findByKeyword() {
+    void findByKeyword() throws Exception {
         // given
         String keyword = "부산";
-        PageRequest pageRequest = PageRequest.of(0, 10);
-        List<Travel> travels = new ArrayList<>();
         IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setTravelTitle("test" + i + keyword);
-            travels.add(travel);
+            this.travelRepository.save(travel);
         });
-        int start = (int) pageRequest.getOffset();
-        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
-        PageImpl<Travel> travelsPages = new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/keyword")
+                .param("keyword", keyword)
+                .param("page", "0")
+                .param("size", "10"));
 
-        when(this.travelRepository.findByTravelTitleContaining(keyword, pageRequest)).thenReturn(travelsPages);
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.travelList[*].travelTitle").exists());
+    }
+
+    @DisplayName("위도 경도 범위 내의 여행지 정보 조회하기")
+    @Test
+    void getTravelsByLocationInfo() throws Exception {
+        // given
+        Travel travel = Travel.builder()
+                .id(125589L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(38.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        Travel outOfTravel = Travel.builder()
+                .id(125521L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(35.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        this.travelRepository.save(travel);
+        this.travelRepository.save(outOfTravel);
 
         // when
-        Page<Travel> byKeyword = this.travelService.findByKeyword(keyword, pageRequest);
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/coordinate")
+                .param("northLatitude", "35.54851698585924")
+                .param("southLatitude", "33.86605388558357")
+                .param("eastLongitude", "132.27023703996352")
+                .param("westLongitude", "120.30370775572416")
+                .param("page", "0")
+                .param("size", "10"));
 
-        //then
-        assertThat(byKeyword).isNotEmpty();
-        assertThat(byKeyword).size().isEqualTo(10);
-        assertThat(byKeyword.get().findFirst().get().getTravelTitle()).contains(keyword);
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("page.totalElements").value(1));
     }
 
 
 
-    private PageImpl<Travel> generateTravels(int code, PageRequest pageRequest){
-        List<Travel> travels = new ArrayList<>();
+
+
+    private void generateTravels(int code){
         IntStream.range(0, 30).forEach(i -> {
             Travel travel = new Travel();
             travel.setTravelTitle("test" + i);
             travel.setTravelSidoCode(code);
             travel.setTravelGugunCode(code);
-            travels.add(travel);
+            this.travelRepository.save(travel);
         });
-
-        int start = (int) pageRequest.getOffset();
-        int end = Math.min((start + pageRequest.getPageSize()), travels.size());
-        return new PageImpl<>(travels.subList(start, end), pageRequest, travels.size());
     }
-
-
-
 }
