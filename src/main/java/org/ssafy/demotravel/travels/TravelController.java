@@ -30,6 +30,9 @@ public class TravelController {
                                      PagedResourcesAssembler <Travel> assembler,
                                      Pageable pageable){
         Page<Travel> bySido = travelService.findBySido(sidoCode, pageable);
+        if(bySido.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
         var bySidoResources = assembler.toModel(bySido, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(bySidoResources);
@@ -40,6 +43,9 @@ public class TravelController {
                                      PagedResourcesAssembler <Travel> assembler,
                                      Pageable pageable){
         Page<Travel> byGugun = travelService.findByGugun(gugunCode, pageable);
+        if(byGugun.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
         var byGugunResources = assembler.toModel(byGugun, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(byGugunResources);
@@ -50,6 +56,9 @@ public class TravelController {
                                       PagedResourcesAssembler <Travel> assembler,
                                       Pageable pageable){
         Page<Travel> byKeyword = travelService.findByKeyword(keyword, pageable);
+        if(byKeyword.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
         var byKeywordResources = assembler.toModel(byKeyword, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(byKeywordResources);
