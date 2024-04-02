@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -120,6 +123,49 @@ class TravelRepositoryTest {
         assertThat(byKeyword).isNotEmpty();
         assertThat(byKeyword).size().isEqualTo(10);
         assertThat(byKeyword.get().findFirst().get().getTravelTitle()).contains(keyword);
+    }
+
+    @DisplayName("위도 경도 범위 내의 여행지 정보 조회하기")
+    @Test
+    void getTravelsByLocationInfo(){
+        // given
+        Travel travel = Travel.builder()
+                .id(125589L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(38.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        this.travelRepository.save(travel);
+
+        Travel outOfTravel = Travel.builder()
+                .id(125521L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(35.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        this.travelRepository.save(outOfTravel);
+
+        BigDecimal northLatitude = BigDecimal.valueOf(38.888780630714486);
+        BigDecimal eastLongitude = BigDecimal.valueOf(136.7436851450521);
+        BigDecimal southLatitude = BigDecimal.valueOf(37.648990187475206);
+        BigDecimal westLongitude = BigDecimal.valueOf(124.14474958053674);
+        PageRequest pageRequest = PageRequest.of(0, 10);
+        // when
+        Page<Travel> byCoordinates = this.travelRepository.findByCoordinates(northLatitude, southLatitude,
+                eastLongitude, westLongitude, Pageable.unpaged());
+
+        // then
+        assertThat(byCoordinates.getSize()).isEqualTo(1);
     }
 
 
