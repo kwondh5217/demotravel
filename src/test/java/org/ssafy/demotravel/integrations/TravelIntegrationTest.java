@@ -1,35 +1,38 @@
 package org.ssafy.demotravel.integrations;
 
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.RestDocumentationContextProvider;
+import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.filter.CharacterEncodingFilter;
 import org.ssafy.demotravel.travels.Travel;
 import org.ssafy.demotravel.travels.TravelRepository;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.stream.IntStream;
 
-<<<<<<< HEAD
-import static org.hamcrest.Matchers.hasSize;
-=======
-import static org.mockito.Mockito.when;
->>>>>>> my-new-branch
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.modifyUris;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(RestDocumentationExtension.class)
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,7 +45,19 @@ public class TravelIntegrationTest {
     TravelRepository travelRepository;
 
 
-    @DisplayName("Travel 첫번째 페이지로 10개를 조회하는 테스트")
+    @BeforeEach
+    void setup(WebApplicationContext webApplicationContext,
+               RestDocumentationContextProvider restDocumentationContextProvider){
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilter(new CharacterEncodingFilter("UTF-8", true))
+                .apply(documentationConfiguration(restDocumentationContextProvider)
+                        .operationPreprocessors()
+                        .withRequestDefaults(modifyUris().host("localhost").removePort(), prettyPrint())
+                        .withResponseDefaults(modifyUris().host("localhost").removePort(), prettyPrint()))
+                .build();
+    }
+
+    @DisplayName("Travel pageable 테스트")
     @Test
     void findAll() throws Exception {
         // given
@@ -55,23 +70,13 @@ public class TravelIntegrationTest {
         // when
         ResultActions resultActions = this.mockMvc.perform(get("/api/travels")
                 .param("page", "0")
-<<<<<<< HEAD
-                .param("size", "10")
-                .param("sort", "name,DESC"));
-=======
                 .param("sort", "travelTitle,DESC"));
->>>>>>> my-new-branch
 
         // then
         resultActions.andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
-<<<<<<< HEAD
-                .andExpect(jsonPath("_embedded.travelList[0].name").exists())
-                .andExpect(jsonPath("_embedded.travelList", hasSize(10)))
-=======
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE+";charset=UTF-8"))
                 .andExpect(jsonPath("_embedded.travelList[0].travelTitle").exists())
->>>>>>> my-new-branch
         ;
     }
 
@@ -93,7 +98,7 @@ public class TravelIntegrationTest {
         // then
         resultActions.andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE+";charset=UTF-8"))
                 .andExpect(jsonPath("travelTitle").exists())
                 .andExpect(jsonPath("_links.self").exists())
         ;
@@ -171,6 +176,49 @@ public class TravelIntegrationTest {
                 .andExpect(jsonPath("$._embedded.travelList[*].travelTitle").exists());
     }
 
+    @DisplayName("위도 경도 범위 내의 여행지 정보 조회하기")
+    @Test
+    void getTravelsByLocationInfo() throws Exception {
+        // given
+        Travel travel = Travel.builder()
+                .id(125589L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(38.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        Travel outOfTravel = Travel.builder()
+                .id(125521L)
+                .travelTitle("강원도 양양군 강현면 일출로 42")
+                .travelZipcode("25009")
+                .travelFirstImage("http://tong.visitkorea.or.kr/cms/resource/55/763455_image2_1.jpg")
+                .travelFirstImage2("http://tong.visitkorea.or.kr/cms/resource/55/763455_image3_1.jpg")
+                .travelSidoCode(32)
+                .travelGugunCode(7)
+                .travelLatitude(BigDecimal.valueOf(35.0610181000000000))
+                .travelLongitude(BigDecimal.valueOf(128.63138220000000000))
+                .build();
+        this.travelRepository.save(travel);
+        this.travelRepository.save(outOfTravel);
+
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/coordinate")
+                .param("northLatitude", "35.54851698585924")
+                .param("southLatitude", "33.86605388558357")
+                .param("eastLongitude", "132.27023703996352")
+                .param("westLongitude", "120.30370775572416")
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("page.totalElements").value(1));
+    }
 
 
 
