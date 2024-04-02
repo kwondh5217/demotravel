@@ -139,6 +139,7 @@ class TravelServiceTest {
     }
 
 
+
     private PageImpl<Travel> generateTravels(int code, PageRequest pageRequest){
         List<Travel> travels = new ArrayList<>();
         IntStream.range(0, 30).forEach(i -> {
