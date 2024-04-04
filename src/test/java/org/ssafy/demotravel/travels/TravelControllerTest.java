@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ActiveProfiles("test")
 @DisplayName("TravelController")
-@WebMvcTest
+@WebMvcTest(TravelController.class)
 class TravelControllerTest {
 
     @Autowired

@@ -6,11 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -162,7 +160,7 @@ class TravelRepositoryTest {
         PageRequest pageRequest = PageRequest.of(0, 10);
         // when
         Page<Travel> byCoordinates = this.travelRepository.findByCoordinates(northLatitude, southLatitude,
-                eastLongitude, westLongitude, Pageable.unpaged());
+                eastLongitude, westLongitude, pageRequest);
 
         // then
         assertThat(byCoordinates.getSize()).isEqualTo(1);

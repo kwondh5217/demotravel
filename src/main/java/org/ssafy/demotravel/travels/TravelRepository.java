@@ -23,5 +23,4 @@ public interface TravelRepository extends JpaRepository<Travel, Long> {
                                    @Param("southLatitude") BigDecimal southLatitude,
                                    @Param("eastLongitude") BigDecimal eastLongitude,
                                    @Param("westLongitude") BigDecimal westLongitude, Pageable pageable);
-
 }
