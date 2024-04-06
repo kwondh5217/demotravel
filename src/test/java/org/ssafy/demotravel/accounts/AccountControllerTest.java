@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
@@ -56,6 +57,7 @@ class AccountControllerTest {
                 .build();
     }
 
+    @Transactional
     @DisplayName("회원 가입 테스트")
     @Test
     void getRequestJoin() throws Exception {
@@ -78,7 +80,7 @@ class AccountControllerTest {
                 .andExpect(jsonPath("email").exists());
     }
 
-
+    @Transactional
     @DisplayName("중복된 이메일 회원 정보가 있어 회원 가입이 실패하는 테스트")
     @Test
     void getRequestJoin_fail() throws Exception {
@@ -103,7 +105,7 @@ class AccountControllerTest {
         resultActions.andDo(print())
                 .andExpect(status().isBadRequest());
     }
-
+    @Transactional
     @DisplayName("필수 입력을 하지 않아서 실패하는 회원가입 테스트")
     @Test
     void getRequestJoin_notNull() throws Exception {
