@@ -6,7 +6,6 @@ import lombok.*;
 @AllArgsConstructor @NoArgsConstructor
 @Builder @Setter @Getter
 public class AccountJoinRequestDto {
-
     @NotNull
     private String email;
     @NotNull

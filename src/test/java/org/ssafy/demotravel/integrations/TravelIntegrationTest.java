@@ -134,6 +134,20 @@ public class TravelIntegrationTest {
                 .andExpect(jsonPath("$._embedded.travelList[*].id").exists());
     }
 
+    @DisplayName("sido code로 여행지 정보 조회 실패하기")
+    @Test
+    void findBySidoCode_fail() throws Exception {
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/sido")
+                .param("sidoCode", "121512")
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
     @DisplayName("gugun code로 여행지 정보 조회하기")
     @Test
     void findByGugunCode() throws Exception {
@@ -152,6 +166,21 @@ public class TravelIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$._embedded.travelList[*].id").exists());
+    }
+
+    @DisplayName("gugun code로 여행지 정보 조회 실패하기")
+    @Test
+    void findByGugunCode_fail() throws Exception {
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/gugun")
+                .param("gugunCode", "125412")
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andDo(print())
+                .andExpect(status().isNotFound());
     }
 
     @DisplayName("키워드가 포함된 여행지 정보 조회하기")
@@ -174,6 +203,20 @@ public class TravelIntegrationTest {
         resultActions.andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$._embedded.travelList[*].travelTitle").exists());
+    }
+
+    @DisplayName("키워드가 포함된 여행지 정보 조회 실패하기")
+    @Test
+    void findByKeyword_fail() throws Exception {
+        // when
+        ResultActions resultActions = this.mockMvc.perform(get("/api/travels/keyword")
+                .param("keyword", "no exists")
+                .param("page", "0")
+                .param("size", "10"));
+
+        // then
+        resultActions.andDo(print())
+                .andExpect(status().isNotFound());
     }
 
     @DisplayName("위도 경도 범위 내의 여행지 정보 조회하기")
