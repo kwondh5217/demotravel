@@ -21,8 +21,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests(request -> {
-            request.requestMatchers(HttpMethod.GET, "/api/travels/**").permitAll()
-                    .anyRequest().permitAll();
+            request.anyRequest().authenticated();
+//            request.requestMatchers(HttpMethod.GET, "/api/travels/**").hasRole("USER")
+//                    .anyRequest().permitAll();
         });
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
