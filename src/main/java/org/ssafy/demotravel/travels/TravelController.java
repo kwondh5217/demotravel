@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @RestController
@@ -32,9 +31,6 @@ public class TravelController {
                                      PagedResourcesAssembler <Travel> assembler,
                                      @PageableDefault(size = 10, page = 0) Pageable pageable){
         Page<Travel> bySido = travelService.findBySido(sidoCode, pageable);
-        if(bySido.isEmpty()){
-            return ResponseEntity.notFound().build();
-        }
         var bySidoResources = assembler.toModel(bySido, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(bySidoResources);
@@ -45,9 +41,6 @@ public class TravelController {
                                      PagedResourcesAssembler <Travel> assembler,
                                       @PageableDefault(size = 10, page = 0) Pageable pageable){
         Page<Travel> byGugun = travelService.findByGugun(gugunCode, pageable);
-        if(byGugun.isEmpty()){
-            return ResponseEntity.notFound().build();
-        }
         var byGugunResources = assembler.toModel(byGugun, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(byGugunResources);
@@ -58,9 +51,6 @@ public class TravelController {
                                       PagedResourcesAssembler <Travel> assembler,
                                       @PageableDefault(size = 10, page = 0) Pageable pageable){
         Page<Travel> byKeyword = travelService.findByKeyword(keyword, pageable);
-        if(byKeyword.isEmpty()){
-            return ResponseEntity.notFound().build();
-        }
         var byKeywordResources = assembler.toModel(byKeyword, t -> new TravelResource(t));
 
         return ResponseEntity.ok().body(byKeywordResources);
@@ -69,11 +59,7 @@ public class TravelController {
 
     @GetMapping("/{id}")
     public ResponseEntity getTravel(@PathVariable("id") Long id) {
-        Optional<Travel> optionalTravel = travelService.findById(id);
-        if(optionalTravel.isEmpty()){
-            return ResponseEntity.notFound().build();
-        }
-        Travel travel = optionalTravel.get();
+        Travel travel = travelService.findById(id);
         TravelResource resource = new TravelResource(travel);
 
         return ResponseEntity.ok(resource);

@@ -44,7 +44,6 @@ public class TravelIntegrationTest {
     @Autowired
     TravelRepository travelRepository;
 
-
     @BeforeEach
     void setup(WebApplicationContext webApplicationContext,
                RestDocumentationContextProvider restDocumentationContextProvider){
@@ -104,10 +103,10 @@ public class TravelIntegrationTest {
         ;
     }
 
-    @DisplayName("Travel조회 요청이 실패하는 테스트")
+    @DisplayName("Travel ID 조회 요청이 실패하는 테스트")
     @Test
     void getTravel_notFound() throws Exception {
-        // when & then
+        // expect
         this.mockMvc.perform(get("/api/travels/1232"))
                 .andDo(print())
                 .andExpect(status().isNotFound());

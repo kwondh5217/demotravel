@@ -68,11 +68,10 @@ class TravelServiceTest {
                 .thenReturn(Optional.of(travel));
 
         // when
-        Optional<Travel> optionalTravel = this.travelService.findById(travel.getId());
+        Travel byId = this.travelService.findById(travel.getId());
 
         // then
-        assertThat(optionalTravel.isEmpty()).isFalse();
-        assertThat(optionalTravel.get().getTravelTitle()).isEqualTo(travel.getTravelTitle());
+        assertThat(byId.getTravelTitle()).isEqualTo(travel.getTravelTitle());
     }
 
     @DisplayName("Travel sido 코드로 조회하기")

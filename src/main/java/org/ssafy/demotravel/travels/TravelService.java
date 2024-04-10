@@ -5,9 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.ssafy.demotravel.exception.CustomErrorException;
+import org.ssafy.demotravel.exception.ErrorCode;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -17,22 +18,37 @@ public class TravelService {
     private final TravelRepository travelRepository;
 
     public Page<Travel> findBySido(int sidoCode, Pageable pageable){
-        return travelRepository.findByTravelSidoCode(sidoCode, pageable);
+        Page<Travel> byTravelSidoCode = travelRepository.findByTravelSidoCode(sidoCode, pageable);
+        if(byTravelSidoCode.isEmpty()){
+            throw new CustomErrorException(ErrorCode.InvalidSidoCode);
+        }
+        return byTravelSidoCode;
     }
     public Page<Travel> findByGugun(int gugunCode, Pageable pageable){
-        return travelRepository.findByTravelGugunCode(gugunCode, pageable);
+        Page<Travel> byTravelGugunCode = travelRepository.findByTravelGugunCode(gugunCode, pageable);
+        if(byTravelGugunCode.isEmpty()){
+            throw new CustomErrorException(ErrorCode.InvalidGugunCode);
+        }
+
+        return byTravelGugunCode;
     }
 
     public Page<Travel> findByKeyword(String keyword, Pageable pageable){
-        return travelRepository.findByTravelTitleContaining(keyword, pageable);
+        Page<Travel> byTravelTitleContaining = travelRepository.findByTravelTitleContaining(keyword, pageable);
+        if(byTravelTitleContaining.isEmpty()){
+            throw new CustomErrorException(ErrorCode.InvalidKeyword);
+        }
+
+        return byTravelTitleContaining;
     }
 
     public Page<Travel> findAll(Pageable pageable){
         return this.travelRepository.findAll(pageable);
     }
 
-    public Optional<Travel> findById(Long id){
-        return this.travelRepository.findById(id);
+    public Travel findById(Long id){
+        return this.travelRepository.findById(id)
+                .orElseThrow(() -> new CustomErrorException(ErrorCode.invalidTravelId));
     }
 
     public Page<Travel> findByCoordinates(BigDecimal northLatitude, BigDecimal southLatitude,

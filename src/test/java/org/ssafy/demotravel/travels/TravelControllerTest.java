@@ -22,11 +22,9 @@ import org.ssafy.demotravel.configs.SecurityConfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -94,7 +92,7 @@ class TravelControllerTest {
         travel.setId(1L);
         travel.setTravelTitle("test");
 
-        when(this.travelService.findById(travel.getId())).thenReturn(Optional.of(travel));
+        when(this.travelService.findById(travel.getId())).thenReturn(travel);
 
         // when & then
         this.mockMvc.perform(get("/api/travels/{id}", travel.getId()))
@@ -104,18 +102,6 @@ class TravelControllerTest {
                 .andExpect(jsonPath("travelTitle").exists());
     }
 
-    @DisplayName("Travel조회 요청이 실패하는 테스트")
-    @Test
-    void callController_notFound() throws Exception {
-        Optional<Travel> empty = Optional.empty();
-        // given
-        when(this.travelService.findById(anyLong())).thenReturn(empty);
-
-        // when & then
-        this.mockMvc.perform(get("/api/travels/1232"))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
 
     @DisplayName("sido code로 여행지 정보 조회하기")
     @Test
